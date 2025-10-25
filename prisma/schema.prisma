@@ -1,0 +1,52 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Models (introspected from your existing tables)
+model Users {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  role       String
+  Customer   Customer?
+  Restaurant Restaurant?
+  Driver     Driver?
+}
+
+model Customer {
+  Customer_ID Int     @id @default(autoincrement())
+  First_Name  String?
+  Middle_Name String?
+  Last_Name   String?
+  Email       String?
+  Phone_Num   String?
+  userId      Int?
+  user        Users?  @relation(fields: [userId], references: [id])
+}
+
+model Restaurant {
+  Restaurant_ID       Int     @id @default(autoincrement())
+  Restaurant_Name     String?
+  Address_First_line  String?
+  Address_Second_line String?
+  City                String?
+  Pincode             String?
+  userId              Int?
+  user                Users?  @relation(fields: [userId], references: [id])
+}
+
+model Driver {
+  Driver_ID Int     @id @default(autoincrement())
+  Name      String?
+  Vehicle   String?
+  License   String?
+  Phone_Num String?
+  userId    Int?
+  user      Users?  @relation(fields: [userId], references: [id])
+}
