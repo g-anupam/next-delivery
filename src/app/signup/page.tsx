@@ -66,41 +66,89 @@ export default function Signup() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
+      setError("Passwords do not match!");
       return;
     }
+
+    // Build role-specific extra data
+    let roleSpecificData: Record<string, any> = {};
+
+    if (role === "customer") {
+      const { firstName, middleName, lastName, email, phone } =
+        formData as CustomerFields;
+      roleSpecificData = { firstName, middleName, lastName, email, phone };
+    } else if (role === "restaurant") {
+      const {
+        restaurantName,
+        email,
+        phone,
+        address1,
+        address2,
+        city,
+        pincode,
+      } = formData as RestaurantFields;
+      roleSpecificData = {
+        restaurantName,
+        email,
+        phone,
+        address1,
+        address2,
+        city,
+        pincode,
+      };
+    } else if (role === "driver") {
+      const {
+        firstName,
+        middleName,
+        lastName,
+        phone,
+        email,
+        vehicleName,
+        vehicleNumber,
+      } = formData as DriverFields;
+      roleSpecificData = {
+        firstName,
+        middleName,
+        lastName,
+        phone,
+        email,
+        vehicleName,
+        vehicleNumber,
+      };
+    }
+
+    const payload = {
+      email: (formData as any).email,
+      password: formData.password,
+      role,
+      extraData: roleSpecificData,
+    };
 
     try {
       const res = await fetch("/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Signup failed");
+      const result = await res.json();
 
-      const data = await res.json();
-      setSuccess(data.message || "Signup successful!");
+      if (!res.ok) {
+        setError(result.error || result.message || "Signup failed");
+        return;
+      }
 
-      // reset form
-      setFormData({
-        firstName: "",
-        middleName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-        role: "customer",
-      } as SignupFormData);
-    } catch (err) {
-      setError((err as Error).message);
+      setSuccess("Signup successful!");
+      console.log(result);
+    } catch (err: any) {
+      console.error("Signup Error:", err);
+      setError("Something went wrong. Please try again.");
     }
   };
 
