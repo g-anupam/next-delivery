@@ -7,38 +7,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col">
       {/* Navbar */}
-      <nav className="flex justify-between items-center px-8 py-6">
-        <h1 className="text-2xl font-extrabold text-orange-600 tracking-tight">
-          QuickBite
-        </h1>
-        <div className="space-x-6">
-          <a
-            href="#"
-            className="text-gray-700 hover:text-orange-600 transition"
-          >
-            Restaurants
-          </a>
-          <a
-            href="#"
-            className="text-gray-700 hover:text-orange-600 transition"
-          >
-            Drivers
-          </a>
-          <a
-            href="#"
-            className="text-gray-700 hover:text-orange-600 transition"
-          >
-            About
-          </a>
-          <Link
-            href="/login"
-            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl shadow-md transition"
-          >
-            Login / Signup
-          </Link>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <main className="flex flex-col md:flex-row flex-1 items-center justify-between px-10 md:px-24 py-10">
         <motion.div
