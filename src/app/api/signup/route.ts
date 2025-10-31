@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         [name, email, hashedPassword, role],
       );
       userId = userResult.insertId;
-      console.log(`✅ [Users Table] Inserted userId = ${userId}`);
+      console.log(` [Users Table] Inserted userId = ${userId}`);
     } catch (err: any) {
       console.error(
         "❌ [Users Table] Insertion failed:",
@@ -73,13 +73,13 @@ export async function POST(req: Request) {
            VALUES (?, ?, ?, ?, ?, ?)`,
           [email, phone, firstName, middleName || null, lastName, userId],
         );
-        console.log("✅ [Customer Table] Insertion successful");
+        console.log(" [Customer Table] Insertion successful");
       } else if (role === "restaurant") {
         const { restaurantName, phone, address1, address2, city, pincode } =
           extraData;
 
         await connection.query(
-          `INSERT INTO Restaurant (Restaurant_Name, Email, Phone_Num, Address_First_line, Address_Second_line, City, Pincode, userId)
+          `INSERT INTO Restaurant (Restaurant_Name, Email, Phone, Address_First_line, Address_Second_line, City, Pincode, userId)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             restaurantName,
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
             userId,
           ],
         );
-        console.log("✅ [Restaurant Table] Insertion successful");
+        console.log(" [Restaurant Table] Insertion successful");
       } else if (role === "driver") {
         const {
           firstName,
@@ -106,14 +106,13 @@ export async function POST(req: Request) {
         const driverFullName = [firstName, middleName, lastName]
           .filter(Boolean)
           .join(" ");
-        const vehicleInfo = `${vehicleName} (${vehicleNumber})`;
 
         await connection.query(
-          `INSERT INTO Driver (Name, Vehicle_Info, Email, userId)
-           VALUES (?, ?, ?, ?)`,
-          [driverFullName, vehicleInfo, email, userId],
+          `INSERT INTO Driver (Name, Vehicle_Name, Vehicle_Number, Email, userId)
+           VALUES (?, ?, ?, ?, ?)`,
+          [driverFullName, vehicleName, vehicleNumber, email, userId],
         );
-        console.log("✅ [Driver Table] Insertion successful");
+        console.log(" [Driver Table] Insertion successful");
       }
     } catch (err: any) {
       console.error(
@@ -132,7 +131,7 @@ export async function POST(req: Request) {
 
     // Commit transaction
     await connection.commit();
-    console.log("✅ Signup transaction committed successfully");
+    console.log(" Signup transaction committed successfully");
 
     return NextResponse.json(
       { message: "Signup successful", userId },
