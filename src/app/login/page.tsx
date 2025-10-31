@@ -2,16 +2,51 @@
 
 import { useState } from "react";
 
-export default function Login() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+export default function LoginPage() {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrorMsg("");
+    setSuccessMsg("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login submitted:", formData);
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid email or password");
+      }
+
+      setSuccessMsg("Login successful!");
+      console.log("✅ User logged in:", data);
+
+      // Optional: Redirect after success
+      // window.location.href = "/dashboard";
+    } catch (error: any) {
+      console.error("❌ Login error:", error.message);
+      setErrorMsg(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,6 +60,7 @@ export default function Login() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-black mb-1">
               Email
@@ -40,8 +76,9 @@ export default function Login() {
             />
           </div>
 
+          {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-black mb-1">
               Password
             </label>
             <input
@@ -51,17 +88,31 @@ export default function Login() {
               onChange={handleChange}
               required
               className="w-full border border-gray-300 text-black rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none"
+              placeholder="••••••••"
             />
           </div>
 
+          {/* Status Messages */}
+          {errorMsg && (
+            <p className="text-red-600 text-sm text-center">{errorMsg}</p>
+          )}
+          {successMsg && (
+            <p className="text-green-600 text-sm text-center">{successMsg}</p>
+          )}
+
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg shadow-md transition"
+            disabled={loading}
+            className={`w-full ${
+              loading ? "bg-orange-300" : "bg-orange-500 hover:bg-orange-600"
+            } text-white font-semibold py-2 rounded-lg shadow-md transition`}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
+        {/* Redirect to Signup */}
         <p className="text-center text-gray-600 text-sm">
           Don’t have an account?{" "}
           <a
