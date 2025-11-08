@@ -1,9 +1,10 @@
 // src/app/restaurants/[id]/page.tsx
-"use client"; // Required for framer-motion
+"use client"; 
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-// Removed: import { useCart } from '@/lib/CartContext'; 
+// ⭐️ NEW IMPORT: Component to handle Add/Quantity logic
+import AddToCartButton from '@/components/AddToCartButton'; 
 
 // --- Data Structure and Dummy Data (All 5 Restaurants) ---
 
@@ -100,6 +101,7 @@ interface RestaurantPageProps {
 // --- Component Definition ---
 
 export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
+  
   // Logic to find restaurant data
   const restaurantId = parseInt(params.id);
   const restaurant = DUMMY_RESTAURANTS.find(r => r.id === restaurantId);
@@ -153,7 +155,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
             <p className="text-gray-600 italic border-l-4 border-orange-200 pl-4 py-1">{restaurant.description}</p>
           </motion.div>
           
-          {/* Menu Section - Renders the dummy menu items */}
+          {/* Menu Section - Renders the menu items */}
           <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="mt-10">
             <h2 className="text-3xl font-bold text-gray-900 border-b pb-2 mb-6">Menu</h2>
             <div className="space-y-4">
@@ -164,13 +166,14 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
                   </div>
                   <div className="flex items-center space-x-4">
                     <span className="text-xl font-bold text-orange-600">${item.price.toFixed(2)}</span>
-                    <button
-                      // ➡️ Placeholder for future Cart Logic
-                      onClick={() => alert(`Added ${item.name} to cart!`)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm shadow-md transition"
-                    >
-                      Add to Cart
-                    </button>
+                    
+                    {/* ⭐️ DYNAMIC QUANTITY BUTTON ⭐️ */}
+                    <AddToCartButton
+                      itemId={item.id}
+                      itemName={item.name}
+                      itemPrice={item.price}
+                      restaurantId={restaurant.id}
+                    />
                   </div>
                 </div>
               ))}

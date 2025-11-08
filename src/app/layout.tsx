@@ -1,7 +1,13 @@
+// src/app/layout.tsx
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+// ⭐️ IMPORT THE PROVIDER
+import { CartProvider } from "@/lib/CartContext"; 
+// ⭐️ IMPORT CARTNAVLINK (New client component for the Navbar)
+import CartNavLink from "@/components/CartNavLink"; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,46 +34,56 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Global Navbar */}
-        <nav className="flex justify-between items-center px-8 py-6 bg-white shadow-sm">
-          <Link
-            href="/"
-            className="text-2xl font-extrabold text-orange-600 tracking-tight hover:text-orange-700 transition"
-          >
-            QuickBite
-          </Link>
+        {/* ⭐️ WRAP ALL UI CONTENT IN CartProvider ⭐️ */}
+        <CartProvider>
+          {/* Global Navbar */}
+          <nav className="flex justify-between items-center px-8 py-6 bg-white shadow-sm">
+            <Link
+              href="/"
+              className="text-2xl font-extrabold text-orange-600 tracking-tight hover:text-orange-700 transition"
+            >
+              QuickBite
+            </Link>
 
-          {/* Optional right-side nav items */}
-          <div className="space-x-6 hidden sm:flex">
-            <Link
-              href="/restaurants"
-              className="text-gray-700 hover:text-orange-600 transition"
-            >
-              Restaurants
-            </Link>
-            <Link
-              href="#"
-              className="text-gray-700 hover:text-orange-600 transition"
-            >
-              Drivers
-            </Link>
-            <Link
-              href="#"
-              className="text-gray-700 hover:text-orange-600 transition"
-            >
-              About
-            </Link>
-            <Link
-              href="/login"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl shadow-md transition"
-            >
-              Login / Signup
-            </Link>
-          </div>
-        </nav>
+            {/* Optional right-side nav items */}
+            <div className="flex items-center space-x-4"> {/* Changed space-x-6 to space-x-4 for better spacing */}
+              
+              <div className="space-x-6 hidden sm:flex">
+                <Link
+                  href="/restaurants"
+                  className="text-gray-700 hover:text-orange-600 transition"
+                >
+                  Restaurants
+                </Link>
+                <Link
+                  href="#"
+                  className="text-gray-700 hover:text-orange-600 transition"
+                >
+                  Drivers
+                </Link>
+                <Link
+                  href="#"
+                  className="text-gray-700 hover:text-orange-600 transition"
+                >
+                  About
+                </Link>
+              </div>
 
-        {/* Page-specific content */}
-        <main>{children}</main>
+              {/* ⭐️ ADD DYNAMIC CART LINK COMPONENT ⭐️ */}
+              <CartNavLink /> 
+              
+              <Link
+                href="/login"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl shadow-md transition"
+              >
+                Login / Signup
+              </Link>
+            </div>
+          </nav>
+
+          {/* Page-specific content */}
+          <main>{children}</main>
+        </CartProvider>
       </body>
     </html>
   );
