@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* * 🛠️ FIX: Override body color inheritance for light-background elements 
+ * This ensures text typed in inputs is dark and visible, 
+ * even when the global body color is set to a light color in Dark Mode.
+ */
+input, textarea {
+  color: #171717 !important; /* Forces a dark color */
+}

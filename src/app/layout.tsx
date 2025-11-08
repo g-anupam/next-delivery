@@ -40,7 +40,7 @@ export default function RootLayout({
           {/* Optional right-side nav items */}
           <div className="space-x-6 hidden sm:flex">
             <Link
-              href="#"
+              href="/restaurants"
               className="text-gray-700 hover:text-orange-600 transition"
             >
               Restaurants
