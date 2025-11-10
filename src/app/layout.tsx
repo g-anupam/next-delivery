@@ -61,7 +61,7 @@ export default function RootLayout({
                   Drivers
                 </Link>
                 <Link
-                  href="#"
+                  href="/about"
                   className="text-gray-700 hover:text-orange-600 transition"
                 >
                   About
