@@ -12,12 +12,23 @@ interface CartItem {
   quantity: number;
 }
 
+interface CartConflict {
+  item: Omit<CartItem, 'quantity'>;
+  currentRestaurantId: number;
+}
+
 interface CartContextType {
   cart: CartItem[];
+  cartConflict: CartConflict | null; // State to hold conflict details
+  
+  // Action functions
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
-  decrementQuantity: (itemId: number, restaurantId: number) => void; // New function for decrement
+  decrementQuantity: (itemId: number, restaurantId: number) => void; 
   removeFromCart: (itemId: number, restaurantId: number) => void;
   clearCart: () => void;
+  resolveConflict: (clear: boolean) => void; // New function to handle the modal response
+  
+  // Getter functions
   getTotalItems: () => number;
   getTotalPrice: () => number;
 }
@@ -28,9 +39,21 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // 3. Create the Provider Component
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartConflict, setCartConflict] = useState<CartConflict | null>(null); // ⭐️ NEW STATE
 
-  // Function to add an item or increase quantity
+  // Function checks for restaurant ID conflict before adding
   const addToCart = (item: Omit<CartItem, 'quantity'>) => {
+    // ⭐️ CONFLICT CHECK
+    if (cart.length > 0) {
+      const currentRestaurantId = cart[0].restaurantId;
+      if (currentRestaurantId !== item.restaurantId) {
+        // CONFLICT FOUND: Store the conflict details and wait for user input (via modal)
+        setCartConflict({ item, currentRestaurantId });
+        return; 
+      }
+    }
+    
+    // NO CONFLICT: Proceed to add item
     setCart(prevCart => {
       const existingItemIndex = prevCart.findIndex(
         cartItem => cartItem.id === item.id && cartItem.restaurantId === item.restaurantId
@@ -49,6 +72,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
     });
   };
+
+  // Function to resolve the conflict after the user interacts with the modal
+  const resolveConflict = (clear: boolean) => {
+    if (!cartConflict) return;
+
+    if (clear) {
+      // User chose to clear the cart and add the new item
+      setCart([]); // Clear all existing items
+      addToCart(cartConflict.item); // Recursively call addToCart, which will now proceed
+    }
+    
+    // Clear the conflict state regardless of whether they cleared the cart or canceled
+    setCartConflict(null);
+  };
+
+  // ... (Existing decrementQuantity, removeFromCart, clearCart, getTotalItems, getTotalPrice logic remains the same)
 
   // Function to decrease quantity or remove if quantity is 1
   const decrementQuantity = (itemId: number, restaurantId: number) => {
@@ -88,15 +127,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const getTotalItems = () => cart.reduce((total, item) => total + item.quantity, 0);
   
   const getTotalPrice = () => cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-
+  
   return (
     <CartContext.Provider 
       value={{ 
         cart, 
+        cartConflict, // ⭐️ EXPOSE CONFLICT STATE
         addToCart, 
-        decrementQuantity, // Included new function
+        decrementQuantity, 
         removeFromCart, 
         clearCart, 
+        resolveConflict, // ⭐️ EXPOSE RESOLVER FUNCTION
         getTotalItems, 
         getTotalPrice 
       }}

@@ -4,10 +4,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
-// ⭐️ IMPORT THE PROVIDER
 import { CartProvider } from "@/lib/CartContext"; 
-// ⭐️ IMPORT CARTNAVLINK (New client component for the Navbar)
 import CartNavLink from "@/components/CartNavLink"; 
+// ⭐️ NEW IMPORT: Dialog component
+import RestaurantConflictDialog from "@/components/RestaurantConflictDialog"; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +34,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* ⭐️ WRAP ALL UI CONTENT IN CartProvider ⭐️ */}
         <CartProvider>
           {/* Global Navbar */}
           <nav className="flex justify-between items-center px-8 py-6 bg-white shadow-sm">
@@ -46,7 +45,7 @@ export default function RootLayout({
             </Link>
 
             {/* Optional right-side nav items */}
-            <div className="flex items-center space-x-4"> {/* Changed space-x-6 to space-x-4 for better spacing */}
+            <div className="flex items-center space-x-4">
               
               <div className="space-x-6 hidden sm:flex">
                 <Link
@@ -69,7 +68,6 @@ export default function RootLayout({
                 </Link>
               </div>
 
-              {/* ⭐️ ADD DYNAMIC CART LINK COMPONENT ⭐️ */}
               <CartNavLink /> 
               
               <Link
@@ -83,6 +81,10 @@ export default function RootLayout({
 
           {/* Page-specific content */}
           <main>{children}</main>
+          
+          {/* ⭐️ CONFLICT DIALOG RENDERED HERE (appears over everything) ⭐️ */}
+          <RestaurantConflictDialog /> 
+          
         </CartProvider>
       </body>
     </html>
