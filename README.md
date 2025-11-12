@@ -1,14 +1,12 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+A full Stack application for food delivery app. Implements Role Based Access for Customers to place orders, restaurants to view, modify menu and accept orders and for drivers to deliver them.
 
-## Getting Started
+This project is completed in NextJS with TypeScript, TailwindCSS and MySQL database.
+Since the MySQl db needs to be created for this project, a sample env example has been attached. Create your respective
+`env.local` file as per the example, with the respective credentials.
 
-First, run the development server:
-
+### To run the Development Server
 ```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-
-This project is a simple Full Stack Development application for mocking a food delivery app
