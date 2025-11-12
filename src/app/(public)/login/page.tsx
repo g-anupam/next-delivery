@@ -10,6 +10,7 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -40,14 +41,16 @@ export default function LoginPage() {
       }
 
       setSuccessMsg("Login successful!");
+      console.log("✅ User logged in:", data);
 
-      // ✅ Redirect based on user role
-      if (data.role === "customer") {
-        router.push("/users/restaurants");
-      } else if (data.role === "restaurant") {
+      // ✅ Redirect based on role
+      const role = data?.user?.role;
+      if (role === "restaurant") {
         router.push("/restaurants");
-      } else if (data.role === "driver") {
-        router.push("/drivers");
+      } else if (role === "customer") {
+        router.push("/users/restaurants");
+      } else if (role === "driver") {
+        router.push("/drivers/dashboard");
       } else {
         router.push("/");
       }
@@ -60,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-orange-50 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-orange-50 to-white px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-3xl font-bold text-center text-orange-600">
           Welcome Back

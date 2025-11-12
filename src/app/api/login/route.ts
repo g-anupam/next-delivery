@@ -4,11 +4,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -17,8 +18,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Query users table
-    const [rows] = await db.query("SELECT * FROM Users WHERE email = ?", [
+    // Fetch user from DB
+    const [rows]: any = await db.query("SELECT * FROM Users WHERE email = ?", [
       email,
     ]);
     const user = Array.isArray(rows) ? rows[0] : null;
@@ -27,34 +28,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    // ✅ Correct field names
-    const payload = {
-      userId: user.id, // ← fixed here
-      role: user.role,
-      email: user.email,
-    };
+    // ✅ Create JWT
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        role: user.role,
+        email: user.email,
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" },
+    );
 
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
-
-    // ✅ Create secure cookie
-    const cookie = serialize("token", token, {
+    // ✅ Set cookie
+    const serialized = serialize("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
       path: "/",
       maxAge: 7 * 24 * 60 * 60, // 7 days
+      sameSite: "lax",
     });
 
+    // ✅ Response
     const response = NextResponse.json({
       message: "Login successful",
-      role: user.role,
+      user: { id: user.id, role: user.role, email: user.email },
     });
-    response.headers.set("Set-Cookie", cookie);
+    response.headers.set("Set-Cookie", serialized);
 
     return response;
   } catch (err) {
