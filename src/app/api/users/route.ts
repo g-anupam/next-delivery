@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
+import { db } from "@/lib/db"; // <- use the db export that exists
 
 export async function GET() {
   try {
-    const connection = await connectToDatabase();
-    const [rows] = await connection.execute("SELECT 1 + 1 AS result");
-    return NextResponse.json({ success: true, data: rows });
-  } catch (error: any) {
-    console.error("Database connection error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const [rows]: any = await db.query(
+      "SELECT id, name, email, role FROM Users LIMIT 100",
+    );
+    return NextResponse.json(rows);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch users" },
+      { status: 500 },
+    );
   }
 }

@@ -1,18 +1,15 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/db";
+import { db } from "@/lib/db"; // <- use the db export that exists
 
 export async function GET() {
   try {
-    const db = await connectToDatabase();
-    const [rows] = await db.query("SELECT NOW() AS time");
-    return NextResponse.json({
-      message: "DB Connected!",
-      time: (rows as any)[0].time,
-    });
-  } catch (error) {
-    console.error("Database connection error:", error);
+    // simple test query — adjust as needed for your DB library
+    const [rows]: any = await db.query("SELECT 1 AS ok");
+    return NextResponse.json({ ok: true, rows });
+  } catch (err) {
+    console.error("Test DB error:", err);
     return NextResponse.json(
-      { error: "Failed to connect to DB" },
+      { ok: false, error: String(err) },
       { status: 500 },
     );
   }

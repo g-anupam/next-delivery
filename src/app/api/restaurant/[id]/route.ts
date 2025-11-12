@@ -1,54 +1,77 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const cookie = req.headers.get("cookie");
-    const token = cookie?.split("token=")[1]?.split(";")[0];
-    if (!token)
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id } = await context.params; // ✅ unwrap async params
+    const restaurantId = parseInt(id);
 
-    const decoded = jwt.verify(token, JWT_SECRET) as {
-      userId: number;
-      role: string;
-    };
+    if (isNaN(restaurantId)) {
+      return NextResponse.json(
+        { error: "Invalid restaurant ID" },
+        { status: 400 },
+      );
+    }
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
+
+    // Only allow restaurants to edit their own info
     if (decoded.role !== "restaurant") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { name, description, price } = await req.json();
+    const body = await req.json();
+    const {
+      Restaurant_Name,
+      Address_First_line,
+      Address_Second_line,
+      City,
+      Pincode,
+      Phone,
+      Email,
+    } = body;
+
     await db.query(
-      "UPDATE Menu SET Item_Name = ?, Item_Description = ?, Price = ? WHERE Menu_ID = ?",
-      [name, description, price, params.id],
+      `UPDATE Restaurant
+       SET Restaurant_Name=?, Address_First_line=?, Address_Second_line=?, City=?, Pincode=?, Phone=?, Email=?
+       WHERE Restaurant_ID=? AND userId=?`,
+      [
+        Restaurant_Name,
+        Address_First_line,
+        Address_Second_line || null,
+        City,
+        Pincode,
+        Phone,
+        Email,
+        restaurantId,
+        decoded.userId,
+      ],
     );
 
-    return NextResponse.json({ message: "Menu item updated successfully" });
+    return NextResponse.json({ message: "Restaurant updated successfully" });
   } catch (err) {
-    console.error("Error updating menu item:", err);
+    console.error("Error updating restaurant:", err);
     return NextResponse.json(
-      { error: "Failed to update item" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function DELETE(
-  _: Request,
-  { params }: { params: { id: string } },
-) {
-  try {
-    await db.query("DELETE FROM Menu WHERE Menu_ID = ?", [params.id]);
-    return NextResponse.json({ message: "Menu item deleted successfully" });
-  } catch (err) {
-    console.error("Error deleting menu item:", err);
-    return NextResponse.json(
-      { error: "Failed to delete item" },
+      { error: "Failed to update restaurant" },
       { status: 500 },
     );
   }
