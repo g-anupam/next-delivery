@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -33,14 +36,21 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Invalid email or password");
+        throw new Error(data.error || "Invalid email or password");
       }
 
       setSuccessMsg("Login successful!");
-      console.log("✅ User logged in:", data);
 
-      // Optional: Redirect after success
-      // window.location.href = "/dashboard";
+      // ✅ Redirect based on user role
+      if (data.role === "customer") {
+        router.push("/users/restaurants");
+      } else if (data.role === "restaurant") {
+        router.push("/restaurants");
+      } else if (data.role === "driver") {
+        router.push("/drivers");
+      } else {
+        router.push("/");
+      }
     } catch (error: any) {
       console.error("❌ Login error:", error.message);
       setErrorMsg(error.message);
@@ -50,7 +60,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-orange-50 to-white px-4">
+    <div className="flex items-center justify-center min-h-screen bg-orange-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8 space-y-6">
         <h2 className="text-3xl font-bold text-center text-orange-600">
           Welcome Back
