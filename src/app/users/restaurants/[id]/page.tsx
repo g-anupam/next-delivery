@@ -50,7 +50,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
 
   if (!restaurant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-10 bg-white shadow-xl rounded-xl">
           <h1 className="text-3xl font-bold text-red-600 mb-4">
             404 - Restaurant Not Found
@@ -67,7 +67,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen pb-20 px-4 sm:px-6 lg:px-8">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
