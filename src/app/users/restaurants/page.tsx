@@ -81,7 +81,7 @@ export default function RestaurantsPage() {
               className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition duration-300 transform hover:scale-[1.02]"
             >
               <Link
-                href={`/restaurants/${r.Restaurant_ID}`}
+                href={`/users/restaurants/${r.Restaurant_ID}`}
                 className="block group"
               >
                 <div className="h-48 w-full bg-gray-200 flex items-center justify-center text-gray-500">

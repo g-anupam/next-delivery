@@ -31,22 +31,24 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
         const data = await res.json();
         setRestaurant(data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching restaurant:", err);
       } finally {
         setLoading(false);
       }
     }
+
     fetchRestaurant();
   }, [params.id]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
         Loading restaurant details...
       </div>
     );
+  }
 
-  if (!restaurant)
+  if (!restaurant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center p-10 bg-white shadow-xl rounded-xl">
@@ -54,7 +56,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
             404 - Restaurant Not Found
           </h1>
           <Link
-            href="/restaurants"
+            href="/users/restaurants"
             className="text-orange-600 font-medium hover:text-orange-700 transition"
           >
             &larr; Go back to Restaurants
@@ -62,6 +64,7 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
         </div>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -71,24 +74,31 @@ export default function RestaurantDetailPage({ params }: RestaurantPageProps) {
         transition={{ duration: 0.5 }}
         className="max-w-3xl mx-auto bg-white shadow-2xl rounded-2xl"
       >
+        {/* Header Section */}
         <div className="relative h-64 bg-gray-200 rounded-t-2xl flex items-center justify-center">
           [Header Image for {restaurant.Restaurant_Name}]
           <Link
-            href="/restaurants"
+            href="/users/restaurants"
             className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-sm rounded-full text-gray-800 hover:bg-white transition shadow-lg"
           >
             &larr;
           </Link>
         </div>
 
+        {/* Details Section */}
         <div className="p-8">
           <h1 className="text-4xl font-extrabold text-gray-900">
             {restaurant.Restaurant_Name}
           </h1>
+
           <p className="text-gray-600 italic mt-2">
-            {restaurant.Address_First_line}, {restaurant.Address_Second_line},{" "}
-            {restaurant.City} - {restaurant.Pincode}
+            {restaurant.Address_First_line}
+            {restaurant.Address_Second_line
+              ? `, ${restaurant.Address_Second_line}`
+              : ""}
+            , {restaurant.City} - {restaurant.Pincode}
           </p>
+
           <div className="mt-4 text-gray-700">
             <p>
               <strong>Phone:</strong> {restaurant.Phone || "N/A"}

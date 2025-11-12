@@ -4,10 +4,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
-import { CartProvider } from "@/lib/CartContext"; 
-import CartNavLink from "@/components/CartNavLink"; 
+import { CartProvider } from "@/lib/CartContext";
+import CartNavLink from "@/components/CartNavLink";
 // ⭐️ NEW IMPORT: Dialog component
-import RestaurantConflictDialog from "@/components/RestaurantConflictDialog"; 
+import RestaurantConflictDialog from "@/components/RestaurantConflictDialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,10 +46,9 @@ export default function RootLayout({
 
             {/* Optional right-side nav items */}
             <div className="flex items-center space-x-4">
-              
               <div className="space-x-6 hidden sm:flex">
                 <Link
-                  href="/restaurants"
+                  href="/users/restaurants"
                   className="text-gray-700 hover:text-orange-600 transition"
                 >
                   Restaurants
@@ -68,8 +67,8 @@ export default function RootLayout({
                 </Link>
               </div>
 
-              <CartNavLink /> 
-              
+              <CartNavLink />
+
               <Link
                 href="/login"
                 className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-xl shadow-md transition"
@@ -81,10 +80,9 @@ export default function RootLayout({
 
           {/* Page-specific content */}
           <main>{children}</main>
-          
+
           {/* ⭐️ CONFLICT DIALOG RENDERED HERE (appears over everything) ⭐️ */}
-          <RestaurantConflictDialog /> 
-          
+          <RestaurantConflictDialog />
         </CartProvider>
       </body>
     </html>
