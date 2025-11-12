@@ -1,4 +1,3 @@
-// src/app/api/logout/route.ts
 import { NextResponse } from "next/server";
 import { serialize } from "cookie";
 
