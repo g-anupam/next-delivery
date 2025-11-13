@@ -1,41 +1,142 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+
+type Address = {
+  Address_ID: number;
+  Address_First_Line: string;
+  Address_Second_Line: string | null;
+  City: string;
+  Pincode: string;
+};
 
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
 
-  async function loadAddresses() {
+  const [form, setForm] = useState({
+    address1: "",
+    address2: "",
+    city: "",
+    pincode: "",
+  });
+
+  const fetchAddresses = async () => {
     const res = await fetch("/api/user/addresses");
     const data = await res.json();
-    setAddresses(data);
+    setAddresses(Array.isArray(data) ? data : []);
     setLoading(false);
-  }
+  };
 
   useEffect(() => {
-    loadAddresses();
+    fetchAddresses();
   }, []);
 
-  return (
-    <div className="p-6 min-h-screen bg-orange-50">
-      <h1 className="text-3xl font-bold mb-6">Saved Addresses</h1>
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : addresses.length === 0 ? (
-        <p>You have no saved addresses.</p>
+    const res = await fetch("/api/user/addresses", {
+      method: "POST",
+      body: JSON.stringify(form),
+    });
+
+    if (res.ok) {
+      setShowAdd(false);
+      setForm({ address1: "", address2: "", city: "", pincode: "" });
+      fetchAddresses();
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-600">
+        Loading addresses...
+      </div>
+    );
+
+  return (
+    <div className="max-w-3xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Saved Addresses</h1>
+
+        <button
+          onClick={() => setShowAdd(true)}
+          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+        >
+          Add New
+        </button>
+      </div>
+
+      {addresses.length === 0 ? (
+        <p className="text-gray-600">No saved addresses yet.</p>
       ) : (
         <div className="space-y-4">
-          {addresses.map((a: any) => (
-            <div key={a.Address_ID} className="bg-white p-4 rounded-xl shadow">
-              <p>{a.Address_First_Line}</p>
+          {addresses.map((a) => (
+            <div
+              key={a.Address_ID}
+              className="border bg-white rounded-lg p-4 shadow-sm"
+            >
+              <p className="font-semibold">{a.Address_First_Line}</p>
               {a.Address_Second_Line && <p>{a.Address_Second_Line}</p>}
               <p>
                 {a.City} - {a.Pincode}
               </p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ADD NEW ADDRESS MODAL */}
+      {showAdd && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+          <form
+            onSubmit={handleAdd}
+            className="bg-white p-6 rounded-xl w-full max-w-md space-y-4 shadow-xl"
+          >
+            <h2 className="text-xl font-bold">Add New Address</h2>
+
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="Address Line 1"
+              required
+              value={form.address1}
+              onChange={(e) => setForm({ ...form, address1: e.target.value })}
+            />
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="Address Line 2 (optional)"
+              value={form.address2}
+              onChange={(e) => setForm({ ...form, address2: e.target.value })}
+            />
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="City"
+              required
+              value={form.city}
+              onChange={(e) => setForm({ ...form, city: e.target.value })}
+            />
+            <input
+              className="w-full border p-2 rounded"
+              placeholder="Pincode"
+              required
+              value={form.pincode}
+              onChange={(e) => setForm({ ...form, pincode: e.target.value })}
+            />
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowAdd(false)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Cancel
+              </button>
+              <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                Save
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>
