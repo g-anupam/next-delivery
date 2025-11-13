@@ -1,17 +1,17 @@
 // src/components/CartNavLink.tsx
 "use client";
 
-import Link from 'next/link';
-import { ShoppingCart } from 'lucide-react'; // Remember to run: npm install lucide-react
-import { useCart } from '@/lib/CartContext';
+import Link from "next/link";
+import { ShoppingCart } from "lucide-react"; // Remember to run: npm install lucide-react
+import { useCart } from "@/lib/CartContext";
 
 export default function CartNavLink() {
   const { getTotalItems } = useCart();
   const itemCount = getTotalItems();
 
   return (
-    <Link 
-      href="/checkout" 
+    <Link
+      href="/users/checkout"
       className="relative p-2 rounded-full text-gray-700 hover:text-orange-600 hover:bg-gray-100 transition"
       aria-label={`View shopping cart with ${itemCount} items`}
     >

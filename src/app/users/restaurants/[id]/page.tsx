@@ -3,6 +3,7 @@
 import { use, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import AddToCartButton from "@/components/AddToCartButton";
 
 type Restaurant = {
   Restaurant_ID: number;
@@ -27,7 +28,7 @@ export default function RestaurantDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // ✅ Unwrap the async params (Next.js 15+)
+  // Unwrap params (Next.js 15)
   const { id } = use(params);
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -37,22 +38,18 @@ export default function RestaurantDetailPage({
   useEffect(() => {
     async function fetchRestaurantAndMenu() {
       try {
-        // ✅ Fetch restaurant details
+        // Fetch restaurant
         const restaurantRes = await fetch(`/api/restaurants/${id}`);
         if (!restaurantRes.ok) throw new Error("Failed to fetch restaurant");
         const restaurantData = await restaurantRes.json();
         setRestaurant(restaurantData);
 
-        // ✅ Fetch menu items for this restaurant
+        // Fetch menu
         const menuRes = await fetch(`/api/restaurants/${id}/menu`);
         const menuData = await menuRes.json();
 
-        if (Array.isArray(menuData)) {
-          setMenu(menuData);
-        } else {
-          console.error("Invalid menu response:", menuData);
-          setMenu([]);
-        }
+        if (Array.isArray(menuData)) setMenu(menuData);
+        else setMenu([]);
       } catch (err) {
         console.error("Error fetching restaurant details:", err);
       } finally {
@@ -63,7 +60,7 @@ export default function RestaurantDetailPage({
     fetchRestaurantAndMenu();
   }, [id]);
 
-  // ✅ Loading State
+  // Loading UI
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
@@ -72,7 +69,7 @@ export default function RestaurantDetailPage({
     );
   }
 
-  // ✅ 404 / Not Found State
+  // Not found UI
   if (!restaurant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-orange-50">
@@ -91,7 +88,6 @@ export default function RestaurantDetailPage({
     );
   }
 
-  // ✅ Page Layout
   return (
     <div className="min-h-screen bg-orange-50 pb-20">
       <motion.div
@@ -135,7 +131,7 @@ export default function RestaurantDetailPage({
           </div>
         </div>
 
-        {/* Menu Section */}
+        {/* Menu */}
         <div className="p-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Menu</h2>
 
@@ -153,14 +149,22 @@ export default function RestaurantDetailPage({
                     <p className="text-gray-500 text-sm">
                       {item.Item_Description || "No description available"}
                     </p>
+                    <span className="text-lg font-bold text-orange-600 block mt-1">
+                      {new Intl.NumberFormat("en-IN", {
+                        style: "currency",
+                        currency: "INR",
+                        minimumFractionDigits: 2,
+                      }).format(Number(item.Price))}
+                    </span>
                   </div>
-                  <span className="text-lg font-bold text-orange-600">
-                    {new Intl.NumberFormat("en-IN", {
-                      style: "currency",
-                      currency: "INR",
-                      minimumFractionDigits: 2,
-                    }).format(Number(item.Price))}
-                  </span>
+
+                  {/* ⭐ REAL ADD TO CART BUTTON */}
+                  <AddToCartButton
+                    itemId={item.Menu_ID}
+                    itemName={item.Item_Name}
+                    itemPrice={Number(item.Price)}
+                    restaurantId={restaurant.Restaurant_ID}
+                  />
                 </div>
               ))}
             </div>
