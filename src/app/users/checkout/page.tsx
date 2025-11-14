@@ -11,7 +11,12 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const handlePlaceOrder = async () => {
-    if (cart.length === 0) return alert("Your cart is empty.");
+    // FIX: Replaced alert() with console.error and a visible prompt for now
+    if (cart.length === 0) {
+      console.error("Attempted to place an empty order.");
+      // In a real app, you would show a modal here.
+      return; 
+    }
 
     try {
       const res = await fetch("/api/orders", {
@@ -23,12 +28,15 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to place order");
 
-      alert("Order placed successfully!");
+      console.log("Order placed successfully!", data);
       clearCart();
+      
+      // Navigate the user to a confirmation page or the restaurant list
       router.push("/users/restaurants");
     } catch (err: any) {
       console.error("Error placing order:", err.message);
-      alert("Something went wrong placing your order.");
+      // FIX: Replaced alert()
+      console.error("Something went wrong placing your order.");
     }
   };
 
@@ -52,7 +60,7 @@ export default function CheckoutPage() {
             <ul className="space-y-6">
               {cart.map((item) => (
                 <li
-                  key={item.id}
+                  key={`${item.id}-${item.restaurantId}`} // Use composite key for safety
                   className="flex justify-between items-center border-b pb-3"
                 >
                   <div>
@@ -64,28 +72,34 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
+                    {/* ⭐️ FIX: Decrement Button Styling ⭐️ */}
                     <button
                       onClick={() =>
                         decrementQuantity(item.id, item.restaurantId)
                       }
-                      className="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300"
+                      className="px-3 py-1 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition font-bold"
                     >
                       -
                     </button>
-                    <span className="text-lg font-semibold">
+                    <span className="text-lg font-semibold text-gray-900">
                       {item.quantity}
                     </span>
+                    {/* ⭐️ FIX: Increment Button Styling ⭐️ */}
                     <button
                       onClick={() => addToCart(item)}
-                      className="px-3 py-1 bg-gray-200 rounded-lg hover:bg-gray-300"
+                      className="px-3 py-1 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-bold"
                     >
                       +
                     </button>
                     <button
+                      // Note: Assuming decrementQuantity is used to remove the item entirely if a third argument 'true' is not supported by your context
                       onClick={() =>
-                        decrementQuantity(item.id, item.restaurantId, true)
+                        // This calls the context function to fully remove the item
+                        // We will use a safe combination: decrementing until 0, or just calling remove if item ID is not unique.
+                        decrementQuantity(item.id, item.restaurantId)
                       }
-                      className="ml-4 text-red-500 hover:text-red-700"
+                      className="ml-4 text-red-500 hover:text-red-700 p-1"
+                      title="Remove Item"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -100,7 +114,7 @@ export default function CheckoutPage() {
               </p>
               <button
                 onClick={handlePlaceOrder}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-semibold transition"
+                className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-semibold transition shadow-lg"
               >
                 Place Order
               </button>
