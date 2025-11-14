@@ -1,15 +1,24 @@
 // src/app/users/checkout/page.tsx
 "use client";
 
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/CartContext";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import Link from "next/link";
+
+type Address = {
+  Address_ID: number;
+  Address_First_Line: string;
+  Address_Second_Line?: string | null;
+  City: string;
+  Pincode: string;
+};
 
 export default function CheckoutPage() {
-  const { cart, getTotalPrice, clearCart, decrementQuantity, addToCart } =
-    useCart();
+  const { cart, getTotalPrice } = useCart();
   const router = useRouter();
 
+<<<<<<< HEAD
   const handlePlaceOrder = async () => {
     // FIX: Replaced alert() with console.error and a visible prompt for now
     if (cart.length === 0) {
@@ -37,14 +46,49 @@ export default function CheckoutPage() {
       console.error("Error placing order:", err.message);
       // FIX: Replaced alert()
       console.error("Something went wrong placing your order.");
+=======
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function loadAddresses() {
+      try {
+        const res = await fetch("/api/user/addresses");
+        const data = await res.json();
+        if (Array.isArray(data)) setAddresses(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+>>>>>>> dd0db27 (feat: order payment created)
     }
-  };
+    loadAddresses();
+  }, []);
+
+  if (cart.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-gray-600">Your cart is empty.</p>
+          <Link
+            href="/users/restaurants"
+            className="text-orange-600 hover:underline"
+          >
+            Browse restaurants
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-orange-50 py-12 px-6">
-      <div className="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Cart</h1>
+    <div className="min-h-screen p-6">
+      <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow">
+        <h2 className="text-2xl font-bold mb-4">Checkout</h2>
 
+<<<<<<< HEAD
         {cart.length === 0 ? (
           <p className="text-gray-500 text-center text-lg">
             Your cart is empty.{" "}
@@ -63,14 +107,22 @@ export default function CheckoutPage() {
                   key={`${item.id}-${item.restaurantId}`} // Use composite key for safety
                   className="flex justify-between items-center border-b pb-3"
                 >
+=======
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Cart Summary */}
+          <div>
+            <h3 className="font-semibold mb-2">Your items</h3>
+            <ul className="space-y-3">
+              {cart.map((it) => (
+                <li key={it.id} className="flex justify-between">
+>>>>>>> dd0db27 (feat: order payment created)
                   <div>
-                    <h3 className="font-semibold text-lg text-gray-800">
-                      {item.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      ₹{item.price.toFixed(2)} each
-                    </p>
+                    <div className="font-medium">{it.name}</div>
+                    <div className="text-sm text-gray-500">
+                      Qty: {it.quantity}
+                    </div>
                   </div>
+<<<<<<< HEAD
                   <div className="flex items-center space-x-2">
                     {/* ⭐️ FIX: Decrement Button Styling ⭐️ */}
                     <button
@@ -103,10 +155,15 @@ export default function CheckoutPage() {
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
+=======
+                  <div className="font-semibold">
+                    ₹{(it.price * it.quantity).toFixed(2)}
+>>>>>>> dd0db27 (feat: order payment created)
                   </div>
                 </li>
               ))}
             </ul>
+<<<<<<< HEAD
 
             <div className="mt-8 border-t pt-6 flex justify-between items-center">
               <p className="text-xl font-semibold text-gray-800">
@@ -118,9 +175,78 @@ export default function CheckoutPage() {
               >
                 Place Order
               </button>
+=======
+            <div className="mt-4 flex justify-between font-bold">
+              <div>Total</div>
+              <div>₹{getTotalPrice().toFixed(2)}</div>
+>>>>>>> dd0db27 (feat: order payment created)
             </div>
-          </>
-        )}
+          </div>
+
+          {/* Address selector */}
+          <div>
+            <h3 className="font-semibold mb-2">Select delivery address</h3>
+            {loading ? (
+              <div>Loading addresses...</div>
+            ) : addresses.length === 0 ? (
+              <div>
+                <p className="text-gray-600">
+                  No saved addresses. Add one from your profile.
+                </p>
+                <Link
+                  href="/users/addresses"
+                  className="text-orange-600 hover:underline"
+                >
+                  Add address
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {addresses.map((a) => (
+                  <label
+                    key={a.Address_ID}
+                    className={`block p-3 rounded border ${selectedAddress === a.Address_ID ? "border-orange-400 bg-orange-50" : "border-gray-200"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="address"
+                      value={a.Address_ID}
+                      checked={selectedAddress === a.Address_ID}
+                      onChange={() => setSelectedAddress(a.Address_ID)}
+                      className="mr-2"
+                    />
+                    <div className="font-medium">{a.Address_First_Line}</div>
+                    {a.Address_Second_Line && (
+                      <div className="text-sm">{a.Address_Second_Line}</div>
+                    )}
+                    <div className="text-sm text-gray-600">
+                      {a.City} - {a.Pincode}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-6 flex space-x-3">
+              <button
+                disabled={!selectedAddress}
+                onClick={() =>
+                  router.push(`/users/payment?addressId=${selectedAddress}`)
+                }
+                className={`px-4 py-2 rounded bg-orange-500 text-white ${!selectedAddress ? "opacity-60 cursor-not-allowed" : "hover:bg-orange-600"}`}
+              >
+                Proceed to payment
+              </button>
+
+              <Link
+                href="/users/addresses"
+                className="px-4 py-2 rounded border"
+              >
+                Manage addresses
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
