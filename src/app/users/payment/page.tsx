@@ -1,4 +1,3 @@
-// src/app/users/payment/page.tsx
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -20,13 +19,13 @@ export default function PaymentPage() {
 
     setLoading(true);
     try {
-      // mock delay to simulate payment
       await new Promise((res) => setTimeout(res, 1500));
 
-      // Build items payload
-      const items = cart.map((it: any) => ({
+      // Build full items payload (includes restaurantId!)
+      const items = cart.map((it) => ({
         id: it.id,
         quantity: it.quantity,
+        restaurantId: it.restaurantId,
       }));
 
       const res = await fetch("/api/users/order", {
@@ -38,14 +37,17 @@ export default function PaymentPage() {
           paymentMethod: method,
         }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Order failed");
 
       clearCart();
       router.push(`/users/order/success?orderId=${data.orderId}`);
-    } catch (err: any) {
-      console.error("Payment/create order error:", err);
-      alert(err.message || "Payment failed");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Payment failed. Try again.";
+      console.error("Payment/create order error:", message);
+      alert(message);
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,9 @@ export default function PaymentPage() {
             </label>
             <select
               value={method}
-              onChange={(e) => setMethod(e.target.value as any)}
+              onChange={(e) =>
+                setMethod(e.target.value as "UPI" | "Card" | "COD")
+              }
               className="w-full border p-2 rounded text-gray-600"
             >
               <option value="UPI">UPI</option>
@@ -79,7 +83,6 @@ export default function PaymentPage() {
             </select>
           </div>
 
-          {/* mock fields */}
           {method === "UPI" && (
             <div>
               <label className="block text-sm mb-1 text-gray-600">UPI ID</label>
@@ -89,11 +92,12 @@ export default function PaymentPage() {
               />
             </div>
           )}
+
           {method === "Card" && (
             <>
               <div>
                 <label className="block text-sm mb-1 text-gray-600">
-                  Card number{" "}
+                  Card number
                 </label>
                 <input
                   className="w-full border p-2 rounded"

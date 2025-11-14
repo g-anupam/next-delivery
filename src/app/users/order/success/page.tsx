@@ -1,42 +1,58 @@
-// src/app/users/order/success/page.tsx
 "use client";
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+interface OrderDetail {
+  order: any;
+  items: {
+    Menu_ID: number;
+    Item_Name: string;
+    Price: number;
+    Quantity?: number;
+  }[];
+  payment: any;
+  address: any;
+}
+
 export default function OrderSuccessPage() {
   const search = useSearchParams();
   const orderId = search.get("orderId");
-  const [data, setData] = useState<any>(null);
+
+  const [data, setData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!orderId) return;
+
     (async () => {
       try {
         const res = await fetch(`/api/users/orders/${orderId}`);
         const d = await res.json();
         setData(d);
       } catch (err) {
-        console.error(err);
+        console.error("Fetch order error:", err);
       } finally {
         setLoading(false);
       }
     })();
   }, [orderId]);
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
       </div>
     );
-  if (!data?.order)
+  }
+
+  if (!data?.order) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Order not found
       </div>
     );
+  }
 
   const { order, items, payment, address } = data;
 
@@ -48,13 +64,14 @@ export default function OrderSuccessPage() {
           Order #{order.Order_ID} — Status: {order.Status}
         </p>
 
+        {/* Delivery Address */}
         <div className="mb-4">
           <h3 className="font-semibold text-black">Delivery Address</h3>
           {address ? (
             <div className="text-sm text-gray-700">
-              <div>{address.Address_First_Line}</div>
-              {address.Address_Second_Line && (
-                <div>{address.Address_Second_Line}</div>
+              <div>{address.Address_First_line}</div>
+              {address.Address_Second_line && (
+                <div>{address.Address_Second_line}</div>
               )}
               <div>
                 {address.City} - {address.Pincode}
@@ -65,26 +82,34 @@ export default function OrderSuccessPage() {
           )}
         </div>
 
+        {/* Items */}
         <div className="mb-4">
           <h3 className="font-semibold text-black">Items</h3>
-          <ul>
-            {items.map((it: any) => (
+          <ul className="space-y-2">
+            {items.map((it) => (
               <li
                 key={it.Menu_ID}
                 className="flex justify-between text-gray-700"
               >
-                <div>{it.Item_Name}</div>
-                <div>₹{Number(it.Price).toFixed(2)}</div>
+                <div>
+                  {it.Item_Name} {it.Quantity ? `× ${it.Quantity}` : ""}
+                </div>
+                <div>
+                  ₹{(Number(it.Price) * Number(it.Quantity || 1)).toFixed(2)}
+                </div>
               </li>
             ))}
           </ul>
         </div>
 
+        {/* Payment */}
         <div className="mb-4 flex justify-between">
           <div className="font-semibold text-black">Payment</div>
           <div className="text-gray-700">
             {payment
-              ? `${payment.Payment_Method} — ₹${Number(payment.Amount).toFixed(2)}`
+              ? `${payment.Payment_Method} — ₹${Number(payment.Amount).toFixed(
+                  2,
+                )}`
               : "N/A"}
           </div>
         </div>

@@ -1,4 +1,3 @@
-// src/app/api/users/orders/[id]/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { cookies } from "next/headers";
@@ -13,6 +12,7 @@ export async function GET(
   try {
     const { id } = await context.params;
     const orderId = Number(id);
+
     if (!orderId)
       return NextResponse.json({ error: "Invalid order id" }, { status: 400 });
 
@@ -25,25 +25,28 @@ export async function GET(
     if (!decoded?.userId)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Verify order belongs to user
     const [custRows]: any = await db.query(
       "SELECT Customer_ID FROM Customer WHERE userId = ?",
       [decoded.userId],
     );
-    if (!Array.isArray(custRows) || custRows.length === 0)
+
+    if (!custRows || custRows.length === 0)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+
     const customerId = custRows[0].Customer_ID;
 
     const [orderRows]: any = await db.query(
       "SELECT * FROM Customer_Order WHERE Order_ID = ? AND Customer_ID = ?",
       [orderId, customerId],
     );
-    if (!Array.isArray(orderRows) || orderRows.length === 0)
+
+    if (!orderRows || orderRows.length === 0)
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+
     const order = orderRows[0];
 
     const [items]: any = await db.query(
-      `SELECT m.Menu_ID, m.Item_Name, m.Price
+      `SELECT m.Menu_ID, m.Item_Name, m.Price, oc.Quantity
        FROM Order_Contains oc
        JOIN Menu m ON oc.Menu_ID = m.Menu_ID
        WHERE oc.Order_ID = ?`,
@@ -54,6 +57,7 @@ export async function GET(
       "SELECT * FROM Payment WHERE Payment_ID = ?",
       [order.Payment_ID],
     );
+
     const [addressRows]: any = await db.query(
       "SELECT * FROM Delivery_Address WHERE Address_ID = ?",
       [order.Address_ID],
@@ -62,11 +66,10 @@ export async function GET(
     return NextResponse.json({
       order,
       items,
-      payment: paymentRows[0] || null,
-      address: addressRows[0] || null,
+      payment: paymentRows[0],
+      address: addressRows[0],
     });
-  } catch (err: unknown) {
-    console.error(err);
+  } catch (err) {
     return NextResponse.json(
       { error: "Failed to fetch order" },
       { status: 500 },
