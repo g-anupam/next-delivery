@@ -43,15 +43,15 @@ export default function OrderSuccessPage() {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow">
-        <h2 className="text-2xl font-bold mb-2">Order Confirmed</h2>
+        <h2 className="text-2xl font-bold mb-2 text-black">Order Confirmed</h2>
         <p className="text-gray-600 mb-4">
           Order #{order.Order_ID} — Status: {order.Status}
         </p>
 
         <div className="mb-4">
-          <h3 className="font-semibold">Delivery Address</h3>
+          <h3 className="font-semibold text-black">Delivery Address</h3>
           {address ? (
-            <div className="text-sm">
+            <div className="text-sm text-gray-700">
               <div>{address.Address_First_Line}</div>
               {address.Address_Second_Line && (
                 <div>{address.Address_Second_Line}</div>
@@ -66,10 +66,13 @@ export default function OrderSuccessPage() {
         </div>
 
         <div className="mb-4">
-          <h3 className="font-semibold">Items</h3>
+          <h3 className="font-semibold text-black">Items</h3>
           <ul>
             {items.map((it: any) => (
-              <li key={it.Menu_ID} className="flex justify-between">
+              <li
+                key={it.Menu_ID}
+                className="flex justify-between text-gray-700"
+              >
                 <div>{it.Item_Name}</div>
                 <div>₹{Number(it.Price).toFixed(2)}</div>
               </li>
@@ -78,8 +81,8 @@ export default function OrderSuccessPage() {
         </div>
 
         <div className="mb-4 flex justify-between">
-          <div className="font-semibold">Payment</div>
-          <div>
+          <div className="font-semibold text-black">Payment</div>
+          <div className="text-gray-700">
             {payment
               ? `${payment.Payment_Method} — ₹${Number(payment.Amount).toFixed(2)}`
               : "N/A"}

@@ -54,22 +54,24 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow">
-        <h2 className="text-2xl font-bold mb-4">Payment</h2>
+        <h2 className="text-2xl font-bold mb-4 text-black">Payment</h2>
 
         <div className="mb-4">
-          <div className="font-medium">Amount</div>
-          <div className="text-2xl font-bold">
+          <div className="font-medium text-black">Amount</div>
+          <div className="text-2xl font-bold text-black">
             ₹{getTotalPrice().toFixed(2)}
           </div>
         </div>
 
         <form onSubmit={handlePay} className="space-y-4">
           <div>
-            <label className="block mb-1 font-medium">Payment method</label>
+            <label className="block mb-1 font-medium text-gray-900">
+              Payment method
+            </label>
             <select
               value={method}
               onChange={(e) => setMethod(e.target.value as any)}
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 rounded text-gray-600"
             >
               <option value="UPI">UPI</option>
               <option value="Card">Card</option>
@@ -80,7 +82,7 @@ export default function PaymentPage() {
           {/* mock fields */}
           {method === "UPI" && (
             <div>
-              <label className="block text-sm mb-1">UPI ID (mock)</label>
+              <label className="block text-sm mb-1 text-gray-600">UPI ID</label>
               <input
                 className="w-full border p-2 rounded"
                 placeholder="example@upi"
@@ -90,7 +92,9 @@ export default function PaymentPage() {
           {method === "Card" && (
             <>
               <div>
-                <label className="block text-sm mb-1">Card number (mock)</label>
+                <label className="block text-sm mb-1 text-gray-600">
+                  Card number{" "}
+                </label>
                 <input
                   className="w-full border p-2 rounded"
                   placeholder="xxxx xxxx xxxx xxxx"
