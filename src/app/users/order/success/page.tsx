@@ -22,6 +22,11 @@ export default function OrderSuccessPage() {
   const [data, setData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // rating states
+  const [rating, setRating] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [alreadyRated, setAlreadyRated] = useState(false);
+
   useEffect(() => {
     if (!orderId) return;
 
@@ -30,6 +35,16 @@ export default function OrderSuccessPage() {
         const res = await fetch(`/api/users/orders/${orderId}`);
         const d = await res.json();
         setData(d);
+
+        // Check if already rated
+        if (d?.order?.Order_ID) {
+          const r = await fetch(`/api/users/rating/${d.order.Order_ID}`);
+          const rd = await r.json();
+          if (rd?.rating) {
+            setAlreadyRated(true);
+            setRating(rd.rating);
+          }
+        }
       } catch (err) {
         console.error("Fetch order error:", err);
       } finally {
@@ -37,6 +52,34 @@ export default function OrderSuccessPage() {
       }
     })();
   }, [orderId]);
+
+  async function submitRating() {
+    if (!data) return;
+    const restaurantId = data.order.Restaurant_ID;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/users/rating", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId,
+          orderId: data.order.Order_ID,
+          rating,
+        }),
+      });
+
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Rating failed");
+
+      setAlreadyRated(true);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit rating");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -113,6 +156,47 @@ export default function OrderSuccessPage() {
               : "N/A"}
           </div>
         </div>
+
+        {/* Rating Section — Only after Delivered */}
+        {order.Status === "Delivered" && (
+          <div className="mt-6 p-4 border rounded-xl bg-gray-50">
+            <h3 className="font-semibold text-black mb-2">Rate Your Order</h3>
+
+            {alreadyRated ? (
+              <p className="text-green-600 font-medium">
+                Thank you! You rated this order {rating} ★
+              </p>
+            ) : (
+              <>
+                <div className="flex space-x-3 mb-3">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <span
+                      key={num}
+                      className={`cursor-pointer text-3xl ${
+                        num <= rating ? "text-orange-500" : "text-gray-400"
+                      }`}
+                      onClick={() => setRating(num)}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+
+                <button
+                  disabled={rating === 0 || submitting}
+                  onClick={submitRating}
+                  className={`px-4 py-2 rounded-lg text-white ${
+                    rating === 0 || submitting
+                      ? "bg-gray-400"
+                      : "bg-orange-500 hover:bg-orange-600"
+                  }`}
+                >
+                  {submitting ? "Submitting..." : "Submit Rating"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="mt-4">
           <a href="/users/orders" className="text-orange-600 hover:underline">
