@@ -1,8 +1,9 @@
+// src/app/users/checkout/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/lib/CartContext";
+import { useRouter } from "next/navigation";
 
 type Address = {
   Address_ID: number;
@@ -10,6 +11,12 @@ type Address = {
   Address_Second_Line: string | null;
   City: string;
   Pincode: string;
+};
+
+type Coupon = {
+  Coupon_ID: number;
+  Discount: string | number;
+  Expiry: string | null;
 };
 
 export default function CheckoutPage() {
@@ -20,28 +27,62 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     null,
   );
+
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
+
   const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
+  const [error, setError] = useState("");
 
-  const subtotal = getTotalPrice();
-  const deliveryFee = 30;
-  const finalAmount = subtotal + deliveryFee;
+  // Compute subtotal from cart
+  const subtotal = useMemo(() => getTotalPrice(), [getTotalPrice]);
 
+  // For now, keep flat fees as before (you can adjust)
+  const deliveryFee = cart.length > 0 ? 30 : 0;
+  const platformFee = cart.length > 0 ? 10 : 0;
+
+  const selectedCoupon = useMemo(
+    () => coupons.find((c) => c.Coupon_ID === selectedCouponId),
+    [coupons, selectedCouponId],
+  );
+
+  const couponDiscount = useMemo(() => {
+    if (!selectedCoupon) return 0;
+    const rate = Number(selectedCoupon.Discount) || 0;
+    if (rate <= 0) return 0;
+    return (subtotal * rate) / 100;
+  }, [subtotal, selectedCoupon]);
+
+  const payableTotal = useMemo(() => {
+    const afterDiscount = Math.max(subtotal - couponDiscount, 0);
+    return afterDiscount + deliveryFee + platformFee;
+  }, [subtotal, couponDiscount, deliveryFee, platformFee]);
+
+  const restaurantId =
+    cart.length > 0
+      ? Number(cart[0].restaurantId ?? cart[0].restaurantId)
+      : null;
+
+  // Load addresses
   useEffect(() => {
     async function loadAddresses() {
+      setLoadingAddresses(true);
+      setError("");
       try {
         const res = await fetch("/api/user/addresses");
-        if (!res.ok) {
-          throw new Error("Failed to fetch addresses");
-        }
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setAddresses(data);
-          if (data.length > 0) {
-            setSelectedAddressId(data[0].Address_ID);
-          }
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch addresses");
+        }
+        setAddresses(data);
+        if (data.length > 0) {
+          setSelectedAddressId(data[0].Address_ID);
         }
       } catch (err) {
-        console.error("Error loading addresses:", err);
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("Fetch addresses error:", err);
+        setError(msg);
       } finally {
         setLoadingAddresses(false);
       }
@@ -50,125 +91,236 @@ export default function CheckoutPage() {
     loadAddresses();
   }, []);
 
-  const handleContinue = () => {
+  // Load coupons for restaurant
+  useEffect(() => {
+    if (!restaurantId) {
+      setCoupons([]);
+      setSelectedCouponId(null);
+      return;
+    }
+
+    async function loadCoupons() {
+      setLoadingCoupons(true);
+      setError("");
+      try {
+        const res = await fetch(`/api/restaurants/${restaurantId}/coupons`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch coupons");
+        }
+        setCoupons(data);
+        // Do not auto-select any coupon
+        setSelectedCouponId(null);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        console.error("Fetch coupons error:", err);
+        setError(msg);
+      } finally {
+        setLoadingCoupons(false);
+      }
+    }
+
+    loadCoupons();
+  }, [restaurantId]);
+
+  const handleProceedToPayment = () => {
     if (!selectedAddressId) {
       alert("Please select a delivery address.");
       return;
     }
+    if (cart.length === 0) {
+      alert("Your cart is empty.");
+      return;
+    }
 
-    router.push(`/users/payment?addressId=${selectedAddressId}`);
+    const couponPart =
+      selectedCouponId != null ? `&couponId=${selectedCouponId}` : "";
+    router.push(
+      `/users/payment?addressId=${selectedAddressId}${couponPart}&total=${payableTotal.toFixed(2)}`,
+    );
   };
 
-  const formatAmount = (value: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    }).format(value);
-
   return (
-    <div className="min-h-screen bg-orange-50 p-6">
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow p-6 md:p-8">
-        <h2 className="text-2xl font-bold text-black mb-4">Checkout</h2>
+    <div className="min-h-screen bg-orange-50 py-10 px-4">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Cart + addresses */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Cart Items */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-black">
+              Your Cart ({cart.length} items)
+            </h2>
 
-        {/* Cart summary (simple) */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-black mb-2">Order Summary</h3>
-          {cart.length === 0 ? (
-            <p className="text-gray-600 text-sm">
-              Your cart is empty. Add some items to continue.
-            </p>
-          ) : (
-            <ul className="space-y-1 text-sm text-gray-800">
-              {cart.map((item) => (
-                <li
-                  key={`${item.id}-${item.restaurantId}`}
-                  className="flex justify-between"
-                >
-                  <span>
-                    {item.name} x {item.quantity}
-                  </span>
-                  <span>
-                    {formatAmount(Number(item.price) * item.quantity)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+            {cart.length === 0 ? (
+              <p className="text-gray-600">Your cart is empty.</p>
+            ) : (
+              <ul className="divide-y divide-gray-200">
+                {cart.map((item) => (
+                  <li
+                    key={`${item.id}-${item.restaurantId}`}
+                    className="py-3 flex justify-between text-gray-800"
+                  >
+                    <span>
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span>₹{(item.price * item.quantity).toFixed(2)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-        {/* Address selection */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-black mb-2">Delivery Address</h3>
+          {/* Addresses */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-black">
+              Delivery Address
+            </h2>
 
-          {loadingAddresses ? (
-            <p className="text-gray-600 text-sm">Loading addresses...</p>
-          ) : addresses.length === 0 ? (
-            <p className="text-gray-600 text-sm">
-              You have no saved addresses. Please add one in your profile.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {addresses.map((addr) => (
-                <label
-                  key={addr.Address_ID}
-                  className="flex items-start space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-orange-50"
-                >
-                  <input
-                    type="radio"
-                    name="address"
-                    value={addr.Address_ID}
-                    checked={selectedAddressId === addr.Address_ID}
-                    onChange={() => setSelectedAddressId(addr.Address_ID)}
-                    className="mt-1"
-                  />
-                  <div className="text-sm text-gray-800">
-                    <div>{addr.Address_First_Line}</div>
-                    {addr.Address_Second_Line && (
-                      <div>{addr.Address_Second_Line}</div>
-                    )}
-                    <div>
-                      {addr.City} - {addr.Pincode}
+            {loadingAddresses ? (
+              <p className="text-gray-600">Loading addresses...</p>
+            ) : addresses.length === 0 ? (
+              <p className="text-gray-600">
+                You have no saved addresses. Please add one in your profile.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {addresses.map((addr) => (
+                  <label
+                    key={addr.Address_ID}
+                    className={`block border rounded-xl px-4 py-3 cursor-pointer ${
+                      selectedAddressId === addr.Address_ID
+                        ? "border-orange-500 bg-orange-50"
+                        : "border-gray-200 hover:border-orange-300"
+                    }`}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <input
+                        type="radio"
+                        name="address"
+                        value={addr.Address_ID}
+                        checked={selectedAddressId === addr.Address_ID}
+                        onChange={() => setSelectedAddressId(addr.Address_ID)}
+                        className="mt-1"
+                      />
+                      <div className="text-sm text-gray-800">
+                        <div>{addr.Address_First_Line}</div>
+                        {addr.Address_Second_Line && (
+                          <div>{addr.Address_Second_Line}</div>
+                        )}
+                        <div>
+                          {addr.City} - {addr.Pincode}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Billing section with delivery fee */}
-        <div className="mb-6">
-          <h3 className="font-semibold text-black mb-2">Bill Details</h3>
-          <div className="space-y-1 text-gray-800 text-sm">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>{formatAmount(subtotal)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Delivery Fee</span>
-              <span>{formatAmount(deliveryFee)}</span>
-            </div>
-            <div className="flex justify-between font-semibold border-t pt-2 mt-2">
-              <span>Total</span>
-              <span>{formatAmount(finalAmount)}</span>
-            </div>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Continue button */}
-        <div className="flex justify-end">
-          <button
-            onClick={handleContinue}
-            disabled={cart.length === 0 || !selectedAddressId}
-            className={`px-4 py-2 rounded text-white font-semibold ${
-              cart.length === 0 || !selectedAddressId
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-orange-500 hover:bg-orange-600"
-            }`}
-          >
-            Continue to Payment
-          </button>
+        {/* Right: Summary + Coupons + Proceed */}
+        <div className="space-y-6">
+          {/* Coupons */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-lg font-bold mb-3 text-black">
+              Available Coupons
+            </h2>
+            {loadingCoupons ? (
+              <p className="text-gray-600">Loading coupons...</p>
+            ) : !restaurantId ? (
+              <p className="text-gray-600">
+                Add items from a restaurant to see coupons.
+              </p>
+            ) : coupons.length === 0 ? (
+              <p className="text-gray-600">No coupons available.</p>
+            ) : (
+              <div className="space-y-2">
+                {coupons.map((c) => {
+                  const isSelected = selectedCouponId === c.Coupon_ID;
+                  return (
+                    <button
+                      key={c.Coupon_ID}
+                      type="button"
+                      onClick={() =>
+                        setSelectedCouponId(isSelected ? null : c.Coupon_ID)
+                      }
+                      className={`w-full text-left border rounded-lg px-3 py-2 text-sm ${
+                        isSelected
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-200 hover:border-orange-300"
+                      }`}
+                    >
+                      <div className="font-semibold text-gray-900">
+                        {Number(c.Discount).toFixed(2)}% off
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {c.Expiry
+                          ? `Valid till ${new Date(
+                              c.Expiry,
+                            ).toLocaleDateString()}`
+                          : "No expiry"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Price Summary */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-lg font-bold mb-4 text-black">Price Details</h2>
+
+            <div className="space-y-2 text-sm text-gray-800">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>₹{subtotal.toFixed(2)}</span>
+              </div>
+
+              {couponDiscount > 0 && (
+                <div className="flex justify-between text-green-700">
+                  <span>Coupon discount</span>
+                  <span>-₹{couponDiscount.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between">
+                <span>Delivery fee</span>
+                <span>₹{deliveryFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Platform fee</span>
+                <span>₹{platformFee.toFixed(2)}</span>
+              </div>
+
+              <hr className="my-2" />
+
+              <div className="flex justify-between font-bold text-base text-black">
+                <span>Total payable</span>
+                <span>₹{payableTotal.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleProceedToPayment}
+              disabled={cart.length === 0 || !selectedAddressId}
+              className={`mt-4 w-full py-2 rounded-lg text-white font-semibold ${
+                cart.length === 0 || !selectedAddressId
+                  ? "bg-gray-300 cursor-not-allowed"
+                  : "bg-orange-500 hover:bg-orange-600"
+              }`}
+            >
+              Proceed to payment
+            </button>
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
         </div>
       </div>
     </div>

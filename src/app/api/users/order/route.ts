@@ -1,3 +1,4 @@
+// src/app/api/users/order/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { cookies } from "next/headers";
@@ -11,107 +12,174 @@ export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
-    if (!token)
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: number };
-    if (!decoded?.userId)
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: number;
+      role?: string;
+    };
+
+    if (!decoded?.userId) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    }
 
     const body = await req.json();
-    const items: ItemPayload[] = body.items;
-    const addressId: number = body.addressId;
-    const paymentMethod: string = body.paymentMethod;
+    const items = body.items as ItemPayload[];
+    const addressId = Number(body.addressId);
+    const paymentMethod = body.paymentMethod as string;
+    const couponId = body.couponId ? Number(body.couponId) : null;
 
-    if (!Array.isArray(items) || items.length === 0)
+    if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "No items provided" }, { status: 400 });
-
-    if (!addressId || !paymentMethod)
+    }
+    if (!addressId || !paymentMethod) {
       return NextResponse.json(
         { error: "Missing address or payment method" },
         { status: 400 },
       );
+    }
 
-    // Get Customer_ID
-    const [custRows]: any = await db.query(
+    // 1) Get Customer_ID for this user
+    const [customerRows] = await db.query(
       "SELECT Customer_ID FROM Customer WHERE userId = ?",
       [decoded.userId],
     );
-
-    if (!custRows || custRows.length === 0)
+    const typedCustomerRows = customerRows as { Customer_ID: number }[];
+    if (!typedCustomerRows || typedCustomerRows.length === 0) {
       return NextResponse.json(
         { error: "Customer not found" },
         { status: 404 },
       );
+    }
+    const customerId = typedCustomerRows[0].Customer_ID;
 
-    const customerId = custRows[0].Customer_ID;
-
-    // Validate menu items
+    // 2) Validate items: fetch menu entries and ensure all from same restaurant
     const menuIds = items.map((it) => it.id);
-    const [menuRows]: any = await db.query(
-      `SELECT Menu_ID, Price, Restaurant_ID FROM Menu WHERE Menu_ID IN (${menuIds
-        .map(() => "?")
-        .join(",")})`,
+    const placeholders = menuIds.map(() => "?").join(",");
+    const [menuRows] = await db.query(
+      `SELECT Menu_ID, Price, Restaurant_ID
+       FROM Menu
+       WHERE Menu_ID IN (${placeholders})`,
       menuIds,
     );
+    const typedMenuRows = menuRows as {
+      Menu_ID: number;
+      Price: string | number;
+      Restaurant_ID: number;
+    }[];
 
-    if (menuRows.length !== menuIds.length)
+    if (!typedMenuRows || typedMenuRows.length !== menuIds.length) {
       return NextResponse.json(
         { error: "Some menu items are invalid" },
         { status: 400 },
       );
+    }
 
-    const restaurantIds = [
-      ...new Set(menuRows.map((m: any) => m.Restaurant_ID)),
-    ];
-    if (restaurantIds.length !== 1)
+    const restaurantIds = Array.from(
+      new Set(typedMenuRows.map((r) => r.Restaurant_ID)),
+    );
+    if (restaurantIds.length !== 1) {
       return NextResponse.json(
-        { error: "Items must be from same restaurant" },
+        { error: "All items must belong to a single restaurant" },
         { status: 400 },
       );
-
+    }
     const restaurantId = restaurantIds[0];
 
-    // Calculate total
-    let total = 0;
-    const map = new Map<number, any>();
-    for (const m of menuRows) map.set(m.Menu_ID, m);
-
-    for (const it of items) {
-      const data = map.get(it.id);
-      total += Number(data.Price) * Number(it.quantity);
+    // 3) Calculate subtotal server-side
+    let subtotal = 0;
+    const menuById = new Map<number, { Price: string | number }>();
+    for (const r of typedMenuRows) {
+      menuById.set(r.Menu_ID, { Price: r.Price });
     }
 
-    // Create Payment
-    const paymentStatus = paymentMethod === "COD" ? "Pending" : "Paid";
-    const [paymentResult]: any = await db.query(
-      `INSERT INTO Payment (Amount, Payment_Method, Date, Status) VALUES (?, ?, CURDATE(), ?)`,
-      [total.toFixed(2), paymentMethod, paymentStatus],
-    );
-
-    const paymentId = paymentResult.insertId;
-
-    // Create Customer_Order
-    const [orderResult]: any = await db.query(
-      `INSERT INTO Customer_Order (Status, Customer_ID, Address_ID, Restaurant_ID, Payment_ID)
-       VALUES (?, ?, ?, ?, ?)`,
-      ["Placed", customerId, addressId, restaurantId, paymentId],
-    );
-
-    const orderId = orderResult.insertId;
-
-    // Insert order items WITH quantity
     for (const it of items) {
-      await db.query(
-        `INSERT INTO Order_Contains (Order_ID, Menu_ID, Quantity) VALUES (?, ?, ?)`,
-        [orderId, it.id, it.quantity],
+      const menu = menuById.get(it.id);
+      if (!menu) {
+        return NextResponse.json(
+          { error: `Menu item ${it.id} not found` },
+          { status: 400 },
+        );
+      }
+      const price = Number(menu.Price);
+      const qty = Number(it.quantity || 0);
+      subtotal += price * qty;
+    }
+
+    // 4) Optional coupon validation and discount
+    let usedCouponId: number | null = null;
+    let discountAmount = 0;
+
+    if (couponId) {
+      const [couponRows] = await db.query(
+        `SELECT Coupon_ID, Discount, Expiry
+         FROM Coupon
+         WHERE Coupon_ID = ?
+           AND Restaurant_ID = ?
+           AND (Expiry IS NULL OR Expiry >= CURDATE())`,
+        [couponId, restaurantId],
       );
+      const typedCouponRows = couponRows as {
+        Coupon_ID: number;
+        Discount: string | number;
+        Expiry: string | null;
+      }[];
+
+      if (!typedCouponRows || typedCouponRows.length === 0) {
+        return NextResponse.json(
+          { error: "Invalid or expired coupon" },
+          { status: 400 },
+        );
+      }
+
+      const coupon = typedCouponRows[0];
+      const rate = Number(coupon.Discount) || 0;
+      if (rate > 0) {
+        discountAmount = (subtotal * rate) / 100;
+        usedCouponId = coupon.Coupon_ID;
+      }
     }
+
+    const totalAfterDiscount = Math.max(subtotal - discountAmount, 0);
+
+    // 5) Create Payment row (mocked, status 'Paid' for Card/UPI, 'Pending' for COD)
+    const paymentStatus = paymentMethod === "COD" ? "Pending" : "Paid";
+    const [paymentResult] = await db.query(
+      `INSERT INTO Payment (Amount, Payment_Method, Date, Status)
+       VALUES (?, ?, CURDATE(), ?)`,
+      [totalAfterDiscount.toFixed(2), paymentMethod, paymentStatus],
+    );
+    const typedPaymentResult = paymentResult as { insertId: number };
+    const paymentId = typedPaymentResult.insertId;
+
+    // 6) Create Customer_Order row (Status = Placed)
+    const [orderResult] = await db.query(
+      `INSERT INTO Customer_Order
+         (Status, Customer_ID, Address_ID, Restaurant_ID, Payment_ID, Coupon_ID)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      ["Placed", customerId, addressId, restaurantId, paymentId, usedCouponId],
+    );
+    const typedOrderResult = orderResult as { insertId: number };
+    const orderId = typedOrderResult.insertId;
+
+    // 7) Insert rows into Order_Contains WITH quantity
+    const insertPromises = items.map((it) =>
+      db.query(
+        `INSERT INTO Order_Contains (Order_ID, Menu_ID, Quantity)
+         VALUES (?, ?, ?)`,
+        [orderId, it.id, it.quantity],
+      ),
+    );
+    await Promise.all(insertPromises);
 
     return NextResponse.json({
       message: "Order placed",
       orderId,
-      total,
+      subtotal,
+      discount: discountAmount,
+      total: totalAfterDiscount,
     });
   } catch (err) {
     console.error("Order creation error:", err);
