@@ -69,6 +69,17 @@ export default function RestaurantLayout({
           >
             Orders
           </Link>
+
+          <Link
+            href="/restaurants/coupons"
+            className={`font-medium ${
+              pathname.startsWith("/restaurants/orders")
+                ? "text-orange-600"
+                : "text-gray-700 hover:text-orange-600"
+            }`}
+          >
+            Coupons
+          </Link>
         </div>
 
         {/* Right: Profile dropdown */}
