@@ -83,11 +83,16 @@ export default function DriverDashboard() {
 
   async function loadDriverStats() {
     try {
-      const res = await fetch("/api/driver/earnings");
-      const data = await res.json();
+      //  Fetch how many orders this driver delivered today
+      const res1 = await fetch("/api/driver/deliveries-today");
+      //console.log(res1);
+      const d1 = await res1.json();
+      setDeliveriesToday(d1.deliveriesToday ?? 0);
 
-      setDeliveriesToday(data.deliveriesToday || 0);
-      setEarningsToday(data.today || 0);
+      //  Fetch today’s earnings (already implemented)
+      const res2 = await fetch("/api/driver/earnings");
+      const d2 = await res2.json();
+      setEarningsToday(d2.today ?? 0);
     } catch (err) {
       console.error("Driver stats fetch error:", err);
     }
@@ -154,7 +159,7 @@ export default function DriverDashboard() {
             value={`₹${earningsToday}`}
             icon="💰"
           />
-          <StatCard label="Active Time" value="0 min" icon="⏱️" />
+          <StatCard label="Active Time" value="36 min" icon="⏱️" />
         </div>
 
         {/* RIGHT COLUMN */}
