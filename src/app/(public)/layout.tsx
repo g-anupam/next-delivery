@@ -32,7 +32,7 @@ export default function PublicLayout({
               Restaurants
             </Link>
             <Link
-              href="#"
+              href="/drivers/dashboard"
               className="text-gray-700 hover:text-orange-600 transition"
             >
               Drivers
