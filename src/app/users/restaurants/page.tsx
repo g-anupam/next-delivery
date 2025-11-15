@@ -11,6 +11,7 @@ type Restaurant = {
   Pincode: string;
   Email: string;
   Phone: string;
+  avgRating: number | string; // can come back as DECIMAL→string from MySQL
 };
 
 export default function RestaurantsPage() {
@@ -21,7 +22,15 @@ export default function RestaurantsPage() {
     async function fetchRestaurants() {
       try {
         const res = await fetch("/api/restaurants");
+        if (!res.ok) {
+          console.error("Failed to fetch restaurants. Status:", res.status);
+          return;
+        }
         const data = await res.json();
+        if (!Array.isArray(data)) {
+          console.error("Invalid restaurants response:", data);
+          return;
+        }
         setRestaurants(data);
       } catch (err) {
         console.error("Error fetching restaurants:", err);
@@ -73,36 +82,51 @@ export default function RestaurantsPage() {
 
         {/* Restaurants Grid */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredRestaurants.map((r) => (
-            <motion.div
-              key={r.Restaurant_ID}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4 }}
-              className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition duration-300 transform hover:scale-[1.02]"
-            >
-              <Link
-                href={`/users/restaurants/${r.Restaurant_ID}`}
-                className="block group"
+          {filteredRestaurants.map((r) => {
+            const ratingNumber = Number(r.avgRating ?? 0);
+            const hasRating = ratingNumber > 0;
+
+            return (
+              <motion.div
+                key={r.Restaurant_ID}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4 }}
+                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition duration-300 transform hover:scale-[1.02]"
               >
-                <div className="h-48 w-full bg-gray-200 flex items-center justify-center text-gray-500">
-                  [Image for {r.Restaurant_Name}]
-                </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-semibold text-gray-900 group-hover:text-orange-600 transition">
-                    {r.Restaurant_Name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">{r.City}</p>
-                  <div className="mt-3 flex items-center">
-                    <span className="text-yellow-500 font-bold mr-2">⭐</span>
-                    <span className="text-gray-700">
-                      Contact: {r.Phone || "N/A"}
-                    </span>
+                <Link
+                  href={`/users/restaurants/${r.Restaurant_ID}`}
+                  className="block group"
+                >
+                  <div className="h-48 w-full bg-gray-200 flex items-center justify-center text-gray-500">
+                    [Image for {r.Restaurant_Name}]
                   </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
+
+                  <div className="p-5">
+                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-orange-600 transition">
+                      {r.Restaurant_Name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">{r.City}</p>
+
+                    {/* Rating */}
+                    <div className="mt-3 flex items-center">
+                      <span className="text-yellow-500 font-bold text-lg">
+                        ★ {ratingNumber.toFixed(1)}
+                      </span>
+                      <span className="text-gray-600 text-sm ml-2">
+                        {hasRating ? "Rated" : "No ratings yet"}
+                      </span>
+                    </div>
+
+                    {/* Contact */}
+                    <p className="text-sm text-gray-600 mt-2">
+                      Contact: {r.Phone || "N/A"}
+                    </p>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
 
           {filteredRestaurants.length === 0 && (
             <p className="col-span-full text-center text-gray-600 text-xl py-10">
