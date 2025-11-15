@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-//import Link from "next/link";
+import { useRouter } from 'next/navigation'; // ⭐️ ADDED: Import useRouter
+
 export default function Home() {
+  const router = useRouter(); // ⭐️ ADDED: Initialize router
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col">
       {/* Navbar */}
@@ -24,7 +27,10 @@ export default function Home() {
             the fastest delivery experience in your city.
           </p>
           <div className="flex gap-4">
-            <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl text-lg shadow-lg transition">
+            <button 
+              onClick={() => router.push('/restaurants')} // ⭐️ UPDATED: Redirect to /restaurants
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl text-lg shadow-lg transition"
+            >
               Order Now
             </button>
             <button className="border border-orange-500 text-orange-600 hover:bg-orange-50 px-6 py-3 rounded-xl text-lg transition">
