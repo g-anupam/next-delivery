@@ -22,7 +22,6 @@ const StatCard = ({ label, value, icon }: any) => (
 // ------------------ DRIVER NAVBAR ------------------
 const DriverNavbar = () => {
   const router = useRouter();
-  const [isOnline, setIsOnline] = useState(true);
   const [open, setOpen] = useState(false);
 
   const logout = async () => {
@@ -46,14 +45,7 @@ const DriverNavbar = () => {
             Dashboard
           </Link>
 
-          <button
-            onClick={() => setIsOnline(!isOnline)}
-            className={`px-4 py-2 rounded-full text-white font-semibold ${
-              isOnline ? "bg-green-600" : "bg-red-600"
-            }`}
-          >
-            {isOnline ? "Online" : "Offline"}
-          </button>
+          {/* Removed Online/Offline button entirely */}
 
           <div className="relative">
             <span
@@ -82,16 +74,26 @@ const DriverNavbar = () => {
 
 // ------------------ MAIN PAGE ------------------
 export default function DriverDashboard() {
-  const [stats] = useState([
-    { label: "Deliveries Today", value: 0, icon: "📦" },
-    { label: "Earnings Today", value: "₹0", icon: "💰" },
-    { label: "Active Time", value: "0 min", icon: "⏱️" },
-  ]);
-
   const [availableOrders, setAvailableOrders] = useState([]);
   const [currentOrder, setCurrentOrder] = useState<any>(null);
 
-  // Fetch available orders
+  // ------------------ REAL METRICS ------------------
+  const [deliveriesToday, setDeliveriesToday] = useState(0);
+  const [earningsToday, setEarningsToday] = useState(0);
+
+  async function loadDriverStats() {
+    try {
+      const res = await fetch("/api/driver/earnings");
+      const data = await res.json();
+
+      setDeliveriesToday(data.deliveriesToday || 0);
+      setEarningsToday(data.today || 0);
+    } catch (err) {
+      console.error("Driver stats fetch error:", err);
+    }
+  }
+
+  // ------------------ ORDERS ------------------
   async function loadAvailableOrders() {
     try {
       const res = await fetch("/api/driver/available-orders");
@@ -102,14 +104,12 @@ export default function DriverDashboard() {
     }
   }
 
-  // Fetch details for a specific order
   async function loadOrderDetails(orderId: number) {
     const res = await fetch(`/api/driver/order/${orderId}`);
     const data = await res.json();
     setCurrentOrder(data);
   }
 
-  // Accept order
   async function acceptOrder(orderId: number) {
     await fetch("/api/driver/accept-order", {
       method: "POST",
@@ -118,9 +118,9 @@ export default function DriverDashboard() {
 
     await loadOrderDetails(orderId);
     await loadAvailableOrders();
+    await loadDriverStats();
   }
 
-  // Mark delivered
   async function markDelivered(orderId: number) {
     await fetch("/api/driver/deliver-order", {
       method: "POST",
@@ -129,10 +129,12 @@ export default function DriverDashboard() {
 
     setCurrentOrder(null);
     await loadAvailableOrders();
+    await loadDriverStats();
   }
 
   useEffect(() => {
     loadAvailableOrders();
+    loadDriverStats();
   }, []);
 
   return (
@@ -140,16 +142,24 @@ export default function DriverDashboard() {
       <DriverNavbar />
 
       <div className="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* LEFT COLUMN — STATS */}
+        {/* LEFT COLUMN — REAL METRICS */}
         <div className="space-y-6">
-          {stats.map((s) => (
-            <StatCard key={s.label} {...s} />
-          ))}
+          <StatCard
+            label="Deliveries Today"
+            value={deliveriesToday}
+            icon="📦"
+          />
+          <StatCard
+            label="Earnings Today"
+            value={`₹${earningsToday}`}
+            icon="💰"
+          />
+          <StatCard label="Active Time" value="0 min" icon="⏱️" />
         </div>
 
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-2 space-y-6">
-          {/* If driver has accepted an order */}
+          {/* CURRENT ORDER */}
           {currentOrder ? (
             <div className="bg-white p-6 rounded-xl shadow-lg">
               <h2 className="text-xl font-bold mb-2">
@@ -207,7 +217,10 @@ export default function DriverDashboard() {
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-bold">New Orders Available</h2>
+              {/* NEW ORDERS AVAILABLE */}
+              <h2 className="text-2xl font-bold text-black">
+                New Orders Available
+              </h2>
 
               <div className="space-y-4">
                 {availableOrders.length === 0 ? (
@@ -220,7 +233,7 @@ export default function DriverDashboard() {
                       key={o.Order_ID}
                       className="bg-white p-4 shadow rounded-xl border"
                     >
-                      <h3 className="font-semibold text-lg">
+                      <h3 className="font-semibold text-lg text-black">
                         Order #{o.Order_ID}
                       </h3>
 
