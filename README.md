@@ -1,6 +1,8 @@
 # QuickBite
 QuickBite is a full Stack application for ordering food(similar to zomato and swiggy). Implements Role Based Access for Customers to place orders, restaurants to view, modify menu and accept orders and for drivers to deliver them.
 
+Checkout https://quick-bite-inky.vercel.app/
+
 This project is completed in NextJS with TypeScript, TailwindCSS and MySQL database.
 Since the MySQl db needs to be created for this project, a sample env example has been attached. Create your respective
 `env.local` file as per the example, with the respective credentials.
