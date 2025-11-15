@@ -69,9 +69,9 @@ export default function OrderSuccessPage() {
           <h3 className="font-semibold text-black">Delivery Address</h3>
           {address ? (
             <div className="text-sm text-gray-700">
-              <div>{address.Address_First_line}</div>
-              {address.Address_Second_line && (
-                <div>{address.Address_Second_line}</div>
+              <div>{address.Address_First_Line}</div>
+              {address.Address_Second_Line && (
+                <div>{address.Address_Second_Line}</div>
               )}
               <div>
                 {address.City} - {address.Pincode}
