@@ -62,7 +62,7 @@ export default function AddressesPage() {
 
         <button
           onClick={() => setShowAdd(true)}
-          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+          className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
         >
           Add New
         </button>
@@ -77,9 +77,14 @@ export default function AddressesPage() {
               key={a.Address_ID}
               className="border bg-white rounded-lg p-4 shadow-sm"
             >
-              <p className="font-semibold">{a.Address_First_Line}</p>
-              {a.Address_Second_Line && <p>{a.Address_Second_Line}</p>}
-              <p>
+              {/* Primary Address Line - remains bold */}
+              <p className="font-semibold text-gray-900">{a.Address_First_Line}</p>
+              
+              {/* Secondary Address Line - added dark text */}
+              {a.Address_Second_Line && <p className="text-gray-700">{a.Address_Second_Line}</p>}
+              
+              {/* City and Pincode - added dark text */}
+              <p className="text-gray-700">
                 {a.City} - {a.Pincode}
               </p>
             </div>
@@ -89,34 +94,35 @@ export default function AddressesPage() {
 
       {/* ADD NEW ADDRESS MODAL */}
       {showAdd && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-20">
           <form
             onSubmit={handleAdd}
             className="bg-white p-6 rounded-xl w-full max-w-md space-y-4 shadow-xl"
           >
-          <h2 className="text-xl font-bold text-gray-900">Add New Address</h2>
+            <h2 className="text-xl font-bold text-gray-900">Add New Address</h2>
+
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 rounded text-gray-900 placeholder-gray-600 font-medium focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
               placeholder="Address Line 1"
               required
               value={form.address1}
               onChange={(e) => setForm({ ...form, address1: e.target.value })}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 rounded text-gray-900 placeholder-gray-600 font-medium focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
               placeholder="Address Line 2 (optional)"
               value={form.address2}
               onChange={(e) => setForm({ ...form, address2: e.target.value })}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 rounded text-gray-900 placeholder-gray-600 font-medium focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
               placeholder="City"
               required
               value={form.city}
               onChange={(e) => setForm({ ...form, city: e.target.value })}
             />
             <input
-              className="w-full border p-2 rounded"
+              className="w-full border p-2 rounded text-gray-900 placeholder-gray-600 font-medium focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition"
               placeholder="Pincode"
               required
               value={form.pincode}
@@ -124,12 +130,14 @@ export default function AddressesPage() {
             />
 
             <div className="flex justify-end space-x-3">
-              <button type="button"
-              onClick={() => setShowAdd(false)}
-              className="px-4 py-2 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition">
-              Cancel
+              <button
+                type="button"
+                onClick={() => setShowAdd(false)}
+                className="px-4 py-2 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition"
+              >
+                Cancel
               </button>
-              <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+              <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
                 Save
               </button>
             </div>
