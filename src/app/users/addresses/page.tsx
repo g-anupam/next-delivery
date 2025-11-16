@@ -94,8 +94,7 @@ export default function AddressesPage() {
             onSubmit={handleAdd}
             className="bg-white p-6 rounded-xl w-full max-w-md space-y-4 shadow-xl"
           >
-            <h2 className="text-xl font-bold">Add New Address</h2>
-
+          <h2 className="text-xl font-bold text-gray-900">Add New Address</h2>
             <input
               className="w-full border p-2 rounded"
               placeholder="Address Line 1"
@@ -125,12 +124,10 @@ export default function AddressesPage() {
             />
 
             <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={() => setShowAdd(false)}
-                className="px-4 py-2 border rounded-lg"
-              >
-                Cancel
+              <button type="button"
+              onClick={() => setShowAdd(false)}
+              className="px-4 py-2 border border-gray-400 text-gray-700 rounded-lg hover:bg-gray-100 transition">
+              Cancel
               </button>
               <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
                 Save
