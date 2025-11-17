@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
   const { pathname } = req.nextUrl;
 
-  // Public routes
+  // Allow public routes
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
@@ -21,7 +21,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // No token → redirect to login
+  // Block unauthenticated users
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -33,16 +33,17 @@ export async function middleware(req: NextRequest) {
       email?: string;
     };
 
-    // ✅ Role-based route protection
+    // Role guard: customer routes
     if (pathname.startsWith("/users") && decoded.role !== "customer") {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
+    // Role guard: restaurant dashboard routes
     if (pathname.startsWith("/restaurants") && decoded.role !== "restaurant") {
       return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    // ✅ Add decoded info to headers for API access
+    // Attach identity headers
     const response = NextResponse.next();
     response.headers.set("x-user-id", String(decoded.userId || ""));
     response.headers.set("x-user-role", decoded.role || "");
@@ -55,5 +56,8 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|favicon.ico|public).*)"],
+  matcher: [
+    // Exclude all static files + restaurant images
+    "/((?!_next|static|favicon.ico|robots.txt|sitemap.xml|restaurants).*)",
+  ],
 };
