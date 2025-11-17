@@ -11,12 +11,19 @@ type Restaurant = {
   Pincode: string;
   Email: string;
   Phone: string;
-  avgRating: number | string; // can come back as DECIMAL→string from MySQL
+  avgRating: number | string;
 };
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Hardcoded image mapping for selected restaurants
+  const restaurantImages: Record<number, string> = {
+    1: "/restaurants/mcd.webp",
+    2: "/restaurants/punjab_dhaba.webp",
+    3: "/restaurants/biryani_point.jpeg",
+  };
 
   useEffect(() => {
     async function fetchRestaurants() {
@@ -57,7 +64,7 @@ export default function RestaurantsPage() {
         transition={{ duration: 0.6 }}
         className="max-w-7xl mx-auto"
       >
-        {/* Header and Search */}
+        {/* Header + Search */}
         <header className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
             Find the perfect QuickBite
@@ -98,9 +105,15 @@ export default function RestaurantsPage() {
                   href={`/users/restaurants/${r.Restaurant_ID}`}
                   className="block group"
                 >
-                  <div className="h-48 w-full bg-gray-200 flex items-center justify-center text-gray-500">
-                    [Image for {r.Restaurant_Name}]
-                  </div>
+                  {/* Hardcoded Image or fallback */}
+                  <img
+                    src={
+                      restaurantImages[r.Restaurant_ID] ??
+                      "/restaurants/placeholder.webp"
+                    }
+                    alt={r.Restaurant_Name}
+                    className="h-48 w-full object-cover"
+                  />
 
                   <div className="p-5">
                     <h3 className="text-xl font-semibold text-gray-900 group-hover:text-orange-600 transition">

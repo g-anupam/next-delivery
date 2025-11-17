@@ -35,21 +35,24 @@ export default function RestaurantDetailPage({
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Hardcoded image mapping
+  const headerImages: Record<number, string> = {
+    1: "/restaurants/mcd.webp",
+    2: "/restaurants/punjab_dhaba.webp",
+    3: "/restaurants/biryani_point.jpeg",
+  };
+
   useEffect(() => {
     async function fetchRestaurantAndMenu() {
       try {
-        // Fetch restaurant
         const restaurantRes = await fetch(`/api/restaurants/${id}`);
         if (!restaurantRes.ok) throw new Error("Failed to fetch restaurant");
         const restaurantData = await restaurantRes.json();
         setRestaurant(restaurantData);
 
-        // Fetch menu
         const menuRes = await fetch(`/api/restaurants/${id}/menu`);
         const menuData = await menuRes.json();
-
-        if (Array.isArray(menuData)) setMenu(menuData);
-        else setMenu([]);
+        setMenu(Array.isArray(menuData) ? menuData : []);
       } catch (err) {
         console.error("Error fetching restaurant details:", err);
       } finally {
@@ -60,7 +63,6 @@ export default function RestaurantDetailPage({
     fetchRestaurantAndMenu();
   }, [id]);
 
-  // Loading UI
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">
@@ -69,7 +71,6 @@ export default function RestaurantDetailPage({
     );
   }
 
-  // Not found UI
   if (!restaurant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-orange-50">
@@ -96,9 +97,17 @@ export default function RestaurantDetailPage({
         transition={{ duration: 0.5 }}
         className="max-w-3xl mx-auto bg-white shadow-2xl rounded-2xl"
       >
-        {/* Header */}
-        <div className="relative h-64 bg-gray-200 rounded-t-2xl flex items-center justify-center">
-          [Header Image for {restaurant.Restaurant_Name}]
+        {/* Header Image */}
+        <div className="relative h-64 rounded-t-2xl overflow-hidden bg-gray-200">
+          <img
+            src={
+              headerImages[restaurant.Restaurant_ID] ??
+              "/restaurants/placeholder.webp"
+            }
+            alt={restaurant.Restaurant_Name}
+            className="h-full w-full object-cover"
+          />
+
           <Link
             href="/users/restaurants"
             className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-sm rounded-full text-gray-800 hover:bg-white transition shadow-lg"
@@ -158,7 +167,6 @@ export default function RestaurantDetailPage({
                     </span>
                   </div>
 
-                  {/* ⭐ REAL ADD TO CART BUTTON */}
                   <AddToCartButton
                     itemId={item.Menu_ID}
                     itemName={item.Item_Name}
